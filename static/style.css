@@ -689,7 +689,7 @@ main {
     }
 
     .calendar-sidebar.show {
-        display: block;
+        display: block !important;
     }
 
     .todo-section {

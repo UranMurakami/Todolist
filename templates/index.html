@@ -236,8 +236,12 @@
         // モバイル表示時、カレンダーのみを表示する関数
         const showCalendarOnly = () => {
             if (calendarSidebar) {
-                calendarSidebar.style.display = 'block';
+                // モバイル表示時は確実にカレンダーを表示
                 calendarSidebar.classList.add('show');
+                calendarSidebar.style.display = 'block';
+                calendarSidebar.style.visibility = 'visible';
+                calendarSidebar.style.opacity = '1';
+                calendarSidebar.style.position = 'relative';
             }
             // モバイル表示時はTodoリストを非表示
             if (todoSection && isMobile()) {
@@ -335,6 +339,10 @@
                         // モバイル表示時はカレンダーのみを表示
                         if (isMobile()) {
                             showCalendarOnly();
+                            // カレンダーが確実に描画されるように少し遅延して再描画
+                            setTimeout(() => {
+                                renderCalendar();
+                            }, 150);
                         } else {
                             showCalendar();
                         }
