@@ -233,6 +233,20 @@
             if (todoSection) todoSection.style.display = 'block';
         };
 
+        // モバイル表示時、カレンダーのみを表示する関数
+        const showCalendarOnly = () => {
+            if (calendarSidebar) {
+                calendarSidebar.style.display = 'block';
+                calendarSidebar.classList.add('show');
+            }
+            // モバイル表示時はTodoリストを非表示
+            if (todoSection && isMobile()) {
+                todoSection.style.display = 'none';
+            } else if (todoSection) {
+                todoSection.style.display = 'block';
+            }
+        };
+
         const hideCalendar = () => {
             if (calendarSidebar) {
                 calendarSidebar.style.display = 'none';
@@ -318,8 +332,12 @@
                     if (mobileMenu) mobileMenu.classList.remove('active');
 
                     if (view === 'calendar') {
-                        // カレンダーとTodoリストを表示
-                        showCalendar();
+                        // モバイル表示時はカレンダーのみを表示
+                        if (isMobile()) {
+                            showCalendarOnly();
+                        } else {
+                            showCalendar();
+                        }
                         hideHelp();
                     } else if (view === 'help') {
                         // 操作方法を表示
