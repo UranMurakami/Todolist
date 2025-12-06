@@ -58,6 +58,7 @@ header {
     z-index: 1001;
 }
 
+
 .mobile-menu-btn span {
     width: 25px;
     height: 3px;
@@ -548,7 +549,7 @@ main {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 2000;
     left: 0;
     top: 0;
     width: 100%;
@@ -590,10 +591,12 @@ main {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     padding: 20px 30px;
+    padding-left: 50px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-radius: 12px 12px 0 0;
+    position: relative;
 }
 
 .modal-header h2 {
@@ -739,6 +742,7 @@ main {
 
     .modal-header {
         padding: 15px 20px;
+        padding-left: 50px;
     }
 
     .modal-header h2 {

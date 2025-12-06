@@ -238,10 +238,13 @@
             if (calendarSidebar) {
                 // モバイル表示時は確実にカレンダーを表示
                 calendarSidebar.classList.add('show');
-                calendarSidebar.style.display = 'block';
+                // インラインスタイルで確実に表示
+                calendarSidebar.style.setProperty('display', 'block', 'important');
                 calendarSidebar.style.visibility = 'visible';
                 calendarSidebar.style.opacity = '1';
                 calendarSidebar.style.position = 'relative';
+                calendarSidebar.style.width = '100%';
+                calendarSidebar.style.height = 'auto';
             }
             // モバイル表示時はTodoリストを非表示
             if (todoSection && isMobile()) {
@@ -262,7 +265,13 @@
 
         // 操作方法モーダルの表示
         const showHelp = () => {
-            if (helpModal) helpModal.style.display = 'block';
+            if (helpModal) {
+                helpModal.style.display = 'block';
+                // モーダル表示時、ハンバーガーメニューボタンを非表示
+                if (mobileMenuBtn) {
+                    mobileMenuBtn.style.display = 'none';
+                }
+            }
             if (isMobile()) {
                 // モバイル表示時: カレンダーは非表示、Todoリストは表示したまま
                 if (calendarSidebar) {
@@ -275,7 +284,13 @@
 
         // 操作方法モーダルの非表示
         const hideHelp = () => {
-            if (helpModal) helpModal.style.display = 'none';
+            if (helpModal) {
+                helpModal.style.display = 'none';
+                // モーダル非表示時、ハンバーガーメニューボタンを再表示（モバイル表示時のみ）
+                if (mobileMenuBtn && isMobile()) {
+                    mobileMenuBtn.style.display = 'flex';
+                }
+            }
             if (isMobile()) {
                 // モバイル表示時: カレンダーは非表示のまま、Todoリストは表示
                 if (calendarSidebar) {
@@ -331,7 +346,9 @@
         // モバイルメニュー項目クリック
         if (mobileMenuItems && mobileMenuItems.length > 0) {
             mobileMenuItems.forEach(item => {
-                item.addEventListener('click', () => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const view = item.dataset.view;
                     if (mobileMenu) mobileMenu.classList.remove('active');
 
