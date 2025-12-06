@@ -238,14 +238,20 @@
                 calendarSidebar.style.display = 'none';
                 calendarSidebar.classList.remove('show');
             }
-            if (todoSection) todoSection.style.display = 'none';
+            // Todoリストは常に表示する
+            if (todoSection) todoSection.style.display = 'block';
         };
 
         // 操作方法モーダルの表示
         const showHelp = () => {
             if (helpModal) helpModal.style.display = 'block';
             if (isMobile()) {
-                hideCalendar();
+                // モバイル表示時: カレンダーは非表示、Todoリストは表示したまま
+                if (calendarSidebar) {
+                    calendarSidebar.style.display = 'none';
+                    calendarSidebar.classList.remove('show');
+                }
+                if (todoSection) todoSection.style.display = 'block';
             }
         };
 
@@ -253,7 +259,12 @@
         const hideHelp = () => {
             if (helpModal) helpModal.style.display = 'none';
             if (isMobile()) {
-                showCalendar();
+                // モバイル表示時: カレンダーは非表示のまま、Todoリストは表示
+                if (calendarSidebar) {
+                    calendarSidebar.style.display = 'none';
+                    calendarSidebar.classList.remove('show');
+                }
+                if (todoSection) todoSection.style.display = 'block';
             }
         };
 
@@ -318,11 +329,16 @@
             });
         }
 
-        // 初期表示: デスクトップではカレンダーを表示、モバイルでは非表示
+        // 初期表示: デスクトップではカレンダーを表示、モバイルではTodoリストのみ表示
         if (window.innerWidth > 900) {
             showCalendar();
         } else {
-            hideCalendar();
+            // モバイル表示時: カレンダーは非表示、Todoリストは表示
+            if (calendarSidebar) {
+                calendarSidebar.style.display = 'none';
+                calendarSidebar.classList.remove('show');
+            }
+            if (todoSection) todoSection.style.display = 'block';
         }
 
         // カレンダー機能
