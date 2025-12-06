@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if todo %}Todo編集{% else %}Todo追加{% endif %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{% if todo %}📝 Todo編集{% else %}➕ Todo追加{% endif %}</h1>
+            {% if view_type == 'yesterday' %}
+                <a href="{{ url_for('yesterday') }}" class="btn btn-secondary">一覧に戻る</a>
+            {% elif view_type == 'tomorrow' %}
+                <a href="{{ url_for('tomorrow') }}" class="btn btn-secondary">一覧に戻る</a>
+            {% else %}
+                <a href="{{ url_for('today') }}" class="btn btn-secondary">一覧に戻る</a>
+            {% endif %}
+        </header>
+
+        <main>
+            <form method="POST" class="todo-form">
+                <div class="form-group">
+                    <label for="title">タイトル <span class="required">*</span></label>
+                    <input type="text" id="title" name="title" value="{% if todo %}{{ todo.title }}{% endif %}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="content">内容</label>
+                    <textarea id="content" name="content" rows="5">{% if todo %}{{ todo.content }}{% endif %}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="due_date">期日</label>
+                    <input type="date" id="due_date" name="due_date" value="{% if todo and todo.due_date %}{{ todo.due_date }}{% endif %}">
+                </div>
+
+                <div class="form-group">
+                    <label for="target_date">対象日</label>
+                    {% if todo and todo.target_date %}
+                        <input type="date" id="target_date" name="target_date" value="{{ todo.target_date }}">
+                    {% elif target_date %}
+                        {% if target_date is string %}
+                            <input type="date" id="target_date" name="target_date" value="{{ target_date }}">
+                        {% else %}
+                            <input type="date" id="target_date" name="target_date" value="{{ target_date.strftime('%Y-%m-%d') }}">
+                        {% endif %}
+                    {% else %}
+                        <input type="date" id="target_date" name="target_date" value="">
+                    {% endif %}
+                    <small>このTodoを表示する日付を指定します</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">{% if todo %}更新{% else %}追加{% endif %}</button>
+                    {% if view_type == 'yesterday' %}
+                        <a href="{{ url_for('yesterday') }}" class="btn btn-secondary">キャンセル</a>
+                    {% elif view_type == 'tomorrow' %}
+                        <a href="{{ url_for('tomorrow') }}" class="btn btn-secondary">キャンセル</a>
+                    {% else %}
+                        <a href="{{ url_for('today') }}" class="btn btn-secondary">キャンセル</a>
+                    {% endif %}
+                </div>
+            </form>
+        </main>
+    </div>
+</body>
+</html>
+

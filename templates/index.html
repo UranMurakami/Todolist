@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todoリスト</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <!-- モバイル用ハンバーガーメニューボタン -->
+                <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="メニュー">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <h1>
+                    {% if view_type == 'yesterday' %}
+                        📅 昨日のTodoリスト
+                    {% elif view_type == 'tomorrow' %}
+                        📅 明日のTodoリスト
+                    {% elif view_type == 'custom' %}
+                        📅 {{ current_date.strftime('%Y年%m月%d日') if current_date else '' }}のTodoリスト
+                    {% else %}
+                        📝 今日のTodoリスト
+                    {% endif %}
+                </h1>
+            </div>
+            <div class="header-right">
+                <button id="help-btn" class="btn btn-secondary desktop-only">操作方法</button>
+                {% if view_type == 'custom' %}
+                    <a href="{{ url_for('add_todo', view=view_type, target_date=current_date.strftime('%Y-%m-%d') if current_date else '') }}" class="btn btn-primary">新しいTodoを追加</a>
+                {% else %}
+                    <a href="{{ url_for('add_todo', view=view_type) }}" class="btn btn-primary">新しいTodoを追加</a>
+                {% endif %}
+            </div>
+        </header>
+
+        <!-- モバイル用サイドメニュー -->
+        <div id="mobile-menu" class="mobile-menu">
+            <div class="mobile-menu-content">
+                <button id="mobile-menu-close" class="mobile-menu-close">&times;</button>
+                <ul class="mobile-menu-list">
+                    <li><button class="mobile-menu-item" data-view="calendar">📅 カレンダー</button></li>
+                    <li><button class="mobile-menu-item" data-view="help" id="mobile-help-btn">📚 操作方法</button></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- タブナビゲーション -->
+        <nav class="tab-navigation">
+            <a href="{{ url_for('yesterday') }}" class="tab-btn {% if view_type == 'yesterday' %}active{% endif %}">昨日</a>
+            <a href="{{ url_for('today') }}" class="tab-btn {% if view_type == 'today' %}active{% endif %}">今日</a>
+            <a href="{{ url_for('tomorrow') }}" class="tab-btn {% if view_type == 'tomorrow' %}active{% endif %}">明日</a>
+        </nav>
+
+        <main class="main-content">
+            <!-- カレンダーサイドバー -->
+            <aside class="calendar-sidebar" id="calendar-sidebar">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button id="prev-month" class="calendar-nav-btn">‹</button>
+                        <h3 id="calendar-month-year"></h3>
+                        <button id="next-month" class="calendar-nav-btn">›</button>
+                    </div>
+                    <div id="calendar" class="calendar"></div>
+                    <div class="calendar-footer">
+                        <button id="today-btn" class="btn btn-secondary">今日に戻る</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Todoリストエリア -->
+            <section class="todo-section" id="todo-section">
+            {% if todos %}
+            <div class="todo-list">
+                {% for todo in todos %}
+                <div class="todo-item {% if todo.status == '完了' %}completed{% endif %}">
+                    <div class="todo-header">
+                        <h2>{{ todo.title }}</h2>
+                        <div class="todo-actions">
+                            {% if todo.status != '完了' %}
+                                {% if view_type == 'today' or view_type == 'custom' %}
+                                    <form action="{{ url_for('complete_todo', todo_id=todo.id) }}" method="POST" class="action-form">
+                                        <input type="hidden" name="view_type" value="{{ view_type }}">
+                                        <input type="hidden" name="selected_date" value="{{ current_date.strftime('%Y-%m-%d') if current_date else '' }}">
+                                        <button type="submit" class="btn btn-complete">完了</button>
+                                    </form>
+                                    {% if view_type == 'today' %}
+                                        <form action="{{ url_for('carryover_todo', todo_id=todo.id) }}" method="POST" class="action-form">
+                                            <button type="submit" class="btn btn-carryover" onclick="return confirm('次の日に持越しますか？')">持越し</button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                            {% if view_type == 'custom' %}
+                                <a href="{{ url_for('edit_todo', todo_id=todo.id, target_date=current_date.strftime('%Y-%m-%d') if current_date else '') }}" class="btn btn-edit">編集</a>
+                            {% else %}
+                                <a href="{{ url_for('edit_todo', todo_id=todo.id) }}" class="btn btn-edit">編集</a>
+                            {% endif %}
+                            <form action="{{ url_for('delete_todo', todo_id=todo.id) }}" method="POST" class="action-form">
+                                <input type="hidden" name="view_type" value="{{ view_type }}">
+                                <input type="hidden" name="selected_date" value="{{ current_date.strftime('%Y-%m-%d') if current_date else '' }}">
+                                <button type="submit" class="btn btn-delete" onclick="return confirm('削除してもよろしいですか？')">削除</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% if todo.content %}
+                    <div class="todo-content">
+                        <p>{{ todo.content }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="todo-meta">
+                        {% if todo.day_of_week %}
+                        <span class="day-of-week">📆 {{ todo.day_of_week }}</span>
+                        {% endif %}
+                        {% if todo.due_date %}
+                        <span class="due-date">📅 期日: {{ todo.due_date }}</span>
+                        {% endif %}
+                        {% if todo.created_at %}
+                        <span class="created-at">作成日時: {{ todo.created_at }}</span>
+                        {% endif %}
+                        {% if todo.completed_at %}
+                        <span class="completed-at">✅ 完了日時: {{ todo.completed_at }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>まだTodoがありません。</p>
+                <a href="{{ url_for('add_todo', view=view_type) }}" class="btn btn-primary">最初のTodoを追加</a>
+            </div>
+            {% endif %}
+            </section>
+        </main>
+    </div>
+
+    <!-- 操作方法モーダル -->
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📚 操作方法ガイド</h2>
+                <button class="modal-close" id="close-help">&times;</button>
+            </div>
+            <div class="modal-body">
+                <section>
+                    <h3>🎯 基本的な使い方</h3>
+                    <p>このTodoリストアプリは、Googleスプレッドシートを使ってTodoを管理できます。日付ごとにTodoを追加・編集・削除することができます。</p>
+                </section>
+
+                <section>
+                    <h3>📅 日付の選択方法</h3>
+                    <ul>
+                        <li><strong>カレンダー</strong>: 左側のカレンダーから日付をクリックすると、その日のTodoが表示されます</li>
+                        <li><strong>タブ</strong>: 「昨日」「今日」「明日」のタブで素早く切り替えられます</li>
+                        <li><strong>過去・未来の確認</strong>: カレンダーで過去や未来の日付も選択できます</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>➕ Todoの追加</h3>
+                    <ol>
+                        <li>「新しいTodoを追加」ボタンをクリック</li>
+                        <li>タイトル（必須）、内容、期日、対象日を入力</li>
+                        <li>「追加」ボタンをクリック</li>
+                    </ol>
+                    <p><strong>対象日</strong>: Todoを表示する日付を指定します。カレンダーで選択した日付が自動的に設定されます。</p>
+                </section>
+
+                <section>
+                    <h3>✏️ Todoの編集・削除</h3>
+                    <ul>
+                        <li><strong>編集</strong>: 各Todoの「編集」ボタンから内容を変更できます</li>
+                        <li><strong>削除</strong>: 「削除」ボタンでTodoを削除できます</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>✅ 完了・持越し機能</h3>
+                    <ul>
+                        <li><strong>完了ボタン</strong>: 「今日」画面の未完了Todoに表示されます。押すと完了状態になり、緑色で表示されます</li>
+                        <li><strong>持越しボタン</strong>: 「今日」画面でのみ表示されます。次の日のTodoリストに移動します</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>🗂️ スプレッドシートについて</h3>
+                    <ul>
+                        <li><strong>1枚目「Todos」</strong>: 過去・今日・昨日・明日のTodoが保存されます</li>
+                        <li><strong>2枚目「Todos_Future」</strong>: 明日以降の未来のTodoが自動的に保存されます</li>
+                        <li>スプレッドシートで直接データを確認・編集することも可能です</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3>💡 便利な機能</h3>
+                    <ul>
+                        <li><strong>カレンダーでの日付選択</strong>: 過去や未来のTodoも簡単に確認できます</li>
+                        <li><strong>完了状態の色分け</strong>: 完了済みTodoは緑色で表示され、一目で区別できます</li>
+                        <li><strong>曜日自動計算</strong>: 期日を設定すると、自動的に曜日が計算されます</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 共通のDOM要素を取得
+        const helpBtn = document.getElementById('help-btn');
+        const helpModal = document.getElementById('help-modal');
+        const closeHelp = document.getElementById('close-help');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileMenuClose = document.getElementById('mobile-menu-close');
+        const mobileMenuItems = document.querySelectorAll('.mobile-menu-item');
+        const calendarSidebar = document.getElementById('calendar-sidebar');
+        const todoSection = document.getElementById('todo-section');
+        const mobileHelpBtn = document.getElementById('mobile-help-btn');
+
+        // モバイル表示判定
+        const isMobile = () => window.innerWidth <= 900;
+
+        // カレンダーの表示/非表示を制御する関数
+        const showCalendar = () => {
+            if (calendarSidebar) {
+                calendarSidebar.style.display = 'block';
+                calendarSidebar.classList.add('show');
+            }
+            if (todoSection) todoSection.style.display = 'block';
+        };
+
+        const hideCalendar = () => {
+            if (calendarSidebar) {
+                calendarSidebar.style.display = 'none';
+                calendarSidebar.classList.remove('show');
+            }
+            if (todoSection) todoSection.style.display = 'none';
+        };
+
+        // 操作方法モーダルの表示
+        const showHelp = () => {
+            if (helpModal) helpModal.style.display = 'block';
+            if (isMobile()) {
+                hideCalendar();
+            }
+        };
+
+        // 操作方法モーダルの非表示
+        const hideHelp = () => {
+            if (helpModal) helpModal.style.display = 'none';
+            if (isMobile()) {
+                showCalendar();
+            }
+        };
+
+        // デスクトップ用の操作方法ボタン
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                showHelp();
+            });
+        }
+
+        // モーダルを閉じるボタン
+        if (closeHelp) {
+            closeHelp.addEventListener('click', () => {
+                hideHelp();
+            });
+        }
+
+        // モーダル外クリックで閉じる
+        window.addEventListener('click', (e) => {
+            if (helpModal && e.target === helpModal) {
+                hideHelp();
+            }
+        });
+
+        // モバイルメニューボタンクリック
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                if (mobileMenu) mobileMenu.classList.toggle('active');
+            });
+        }
+
+        // モバイルメニューを閉じる
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', () => {
+                if (mobileMenu) mobileMenu.classList.remove('active');
+            });
+        }
+
+        // モバイルメニュー外クリックで閉じる
+        window.addEventListener('click', (e) => {
+            if (mobileMenu && e.target === mobileMenu) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        // モバイルメニュー項目クリック
+        if (mobileMenuItems && mobileMenuItems.length > 0) {
+            mobileMenuItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const view = item.dataset.view;
+                    if (mobileMenu) mobileMenu.classList.remove('active');
+
+                    if (view === 'calendar') {
+                        // カレンダーとTodoリストを表示
+                        showCalendar();
+                        hideHelp();
+                    } else if (view === 'help') {
+                        // 操作方法を表示
+                        showHelp();
+                    }
+                });
+            });
+        }
+
+        // 初期表示: デスクトップではカレンダーを表示、モバイルでは非表示
+        if (window.innerWidth > 900) {
+            showCalendar();
+        } else {
+            hideCalendar();
+        }
+
+        // カレンダー機能
+        let currentDate = new Date('{{ current_date.strftime("%Y-%m-%d") if current_date else "" }}');
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+
+        function renderCalendar() {
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const calendarEl = document.getElementById('calendar');
+            const monthYearEl = document.getElementById('calendar-month-year');
+            
+            // 月と年を表示
+            const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            monthYearEl.textContent = `${currentYear}年 ${monthNames[currentMonth]}`;
+            
+            // カレンダーをクリア
+            calendarEl.innerHTML = '';
+            
+            // 曜日のヘッダー
+            const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+            weekDays.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-weekday';
+                dayHeader.textContent = day;
+                calendarEl.appendChild(dayHeader);
+            });
+            
+            // 空のセル（月初めまで）
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day empty';
+                calendarEl.appendChild(emptyCell);
+            }
+            
+            // 日付セル
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = day;
+                
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                dayCell.dataset.date = dateStr;
+                
+                // 今日の日付をハイライト
+                if (dateStr === todayStr) {
+                    dayCell.classList.add('today');
+                }
+                
+                // 選択されている日付をハイライト
+                const selectedDateStr = '{{ current_date.strftime("%Y-%m-%d") if current_date else "" }}';
+                if (dateStr === selectedDateStr) {
+                    dayCell.classList.add('selected');
+                }
+                
+                // 過去の日付のスタイル
+                const cellDate = new Date(currentYear, currentMonth, day);
+                if (cellDate < today && dateStr !== todayStr) {
+                    dayCell.classList.add('past');
+                }
+                
+                dayCell.addEventListener('click', () => {
+                    window.location.href = `/date/${dateStr}`;
+                });
+                
+                calendarEl.appendChild(dayCell);
+            }
+        }
+        
+        document.getElementById('prev-month').addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+        });
+        
+        document.getElementById('next-month').addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        });
+        
+        document.getElementById('today-btn').addEventListener('click', () => {
+            window.location.href = '/today';
+        });
+        
+        // 初期表示
+        renderCalendar();
+    </script>
+</body>
+</html>
+
