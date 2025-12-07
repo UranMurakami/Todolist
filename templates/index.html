@@ -446,11 +446,20 @@
         }
 
         // カレンダー機能
-        let currentDate = new Date('{{ current_date.strftime("%Y-%m-%d") if current_date else "" }}');
+        // 日付文字列をローカルタイムゾーンで正しくパース
+        const currentDateStr = '{{ current_date.strftime("%Y-%m-%d") if current_date else "" }}';
+        let currentDate;
+        if (currentDateStr) {
+            const [year, month, day] = currentDateStr.split('-').map(Number);
+            currentDate = new Date(year, month - 1, day); // 月は0ベースなので-1
+        } else {
+            currentDate = new Date();
+        }
         let currentMonth = currentDate.getMonth();
         let currentYear = currentDate.getFullYear();
         const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
+        // 今日の日付をローカルタイムゾーンで取得
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
         // モーダル内カレンダー用の変数（デスクトップ用と独立）
         let modalCurrentMonth = currentMonth;
