@@ -128,34 +128,55 @@ class SheetsAPI:
     
     def get_all_todos(self, target_date=None):
         """すべてのTodoを取得（対象日でフィルタリング可能）"""
+        # target_dateを正規化
+        if target_date:
+            if hasattr(target_date, 'strftime'):
+                target_date_obj = target_date
+                target_date_str = target_date.strftime('%Y-%m-%d')
+            elif isinstance(target_date, str):
+                try:
+                    target_date_obj = datetime.strptime(target_date, '%Y-%m-%d').date()
+                    target_date_str = target_date_obj.strftime('%Y-%m-%d')
+                except:
+                    target_date_obj = None
+                    target_date_str = target_date.strip()
+            else:
+                target_date_obj = None
+                target_date_str = str(target_date)
+        else:
+            target_date_obj = None
+            target_date_str = None
+        
         # 適切なワークシートを選択
-        worksheet = self._get_worksheet_by_date(target_date)
+        worksheet = self._get_worksheet_by_date(target_date_obj if target_date_obj else target_date)
         
         all_values = worksheet.get_all_values()
-        if len(all_values) <= 1:
-            return []
-        
         todos = []
-        for row in all_values[1:]:  # ヘッダーをスキップ
-            if row and row[0].isdigit():
-                todo = {
-                    'id': int(row[0]),
-                    'title': row[1] if len(row) > 1 else '',
-                    'content': row[2] if len(row) > 2 else '',
-                    'day_of_week': row[3] if len(row) > 3 else '',
-                    'due_date': row[4] if len(row) > 4 else '',
-                    'created_at': row[5] if len(row) > 5 else '',
-                    'completed_at': row[6] if len(row) > 6 else '',
-                    'status': row[7] if len(row) > 7 else '未完了',
-                    'target_date': row[8] if len(row) > 8 else ''
-                }
-                # 対象日でフィルタリング
-                if target_date:
-                    target_date_str = target_date.strftime('%Y-%m-%d') if hasattr(target_date, 'strftime') else str(target_date)
-                    if todo['target_date'] == target_date_str:
+        
+        if len(all_values) > 1:
+            for row in all_values[1:]:  # ヘッダーをスキップ
+                if row and row[0].isdigit():
+                    todo = {
+                        'id': int(row[0]),
+                        'title': row[1] if len(row) > 1 else '',
+                        'content': row[2] if len(row) > 2 else '',
+                        'day_of_week': row[3] if len(row) > 3 else '',
+                        'due_date': row[4] if len(row) > 4 else '',
+                        'created_at': row[5] if len(row) > 5 else '',
+                        'completed_at': row[6] if len(row) > 6 else '',
+                        'status': row[7] if len(row) > 7 else '未完了',
+                        'target_date': row[8] if len(row) > 8 else ''
+                    }
+                    # 対象日でフィルタリング
+                    if target_date_str:
+                        # スプレッドシートから読み込んだtarget_dateを正規化（空白削除）
+                        todo_target_date = todo['target_date'].strip() if todo['target_date'] else ''
+                        
+                        # 日付の比較（完全一致）
+                        if todo_target_date == target_date_str:
+                            todos.append(todo)
+                    else:
                         todos.append(todo)
-                else:
-                    todos.append(todo)
         
         return todos
     
