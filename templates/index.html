@@ -459,7 +459,15 @@
         let currentYear = currentDate.getFullYear();
         const today = new Date();
         // 今日の日付をローカルタイムゾーンで取得
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        // 時刻をリセットして日付のみで比較
+        const todayYear = today.getFullYear();
+        const todayMonth = today.getMonth();
+        const todayDay = today.getDate();
+        const todayStr = `${todayYear}-${String(todayMonth + 1).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
+        
+        // デバッグ用（本番環境では削除可能）
+        console.log('Today date string:', todayStr);
+        console.log('Current date from server:', currentDateStr);
 
         // モーダル内カレンダー用の変数（デスクトップ用と独立）
         let modalCurrentMonth = currentMonth;
@@ -518,8 +526,10 @@
                 }
                 
                 // 過去の日付のスタイル
+                // 日付のみで比較するため、時刻を00:00:00に設定
                 const cellDate = new Date(modalCurrentYear, modalCurrentMonth, day);
-                if (cellDate < today && dateStr !== todayStr) {
+                const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                if (cellDate < todayDateOnly && dateStr !== todayStr) {
                     dayCell.classList.add('past');
                 }
                 
@@ -582,8 +592,10 @@
                 }
                 
                 // 過去の日付のスタイル
+                // 日付のみで比較するため、時刻を00:00:00に設定
                 const cellDate = new Date(currentYear, currentMonth, day);
-                if (cellDate < today && dateStr !== todayStr) {
+                const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                if (cellDate < todayDateOnly && dateStr !== todayStr) {
                     dayCell.classList.add('past');
                 }
                 

@@ -172,6 +172,10 @@ class SheetsAPI:
                         # スプレッドシートから読み込んだtarget_dateを正規化（空白削除）
                         todo_target_date = todo['target_date'].strip() if todo['target_date'] else ''
                         
+                        # デバッグ用: 比較値を出力（最初の数件のみ）
+                        if len(todos) < 3:
+                            print(f"DEBUG: Comparing target_date_str='{target_date_str}' with todo_target_date='{todo_target_date}' (Title: {todo.get('title', 'N/A')})")
+                        
                         # 日付の比較（完全一致）
                         if todo_target_date == target_date_str:
                             todos.append(todo)

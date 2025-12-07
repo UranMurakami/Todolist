@@ -31,7 +31,10 @@ def today():
     if sheets_api is None:
         return "エラー: Google Sheets APIが初期化されていません。ターミナルのエラーメッセージを確認してください。", 500
     today = datetime.now().date()
+    # デバッグ用: 今日の日付を出力
+    print(f"DEBUG: Today's date: {today} (ISO format: {today.strftime('%Y-%m-%d')})")
     todos = sheets_api.get_all_todos(target_date=today)
+    print(f"DEBUG: Found {len(todos)} todos for today")
     return render_template('index.html', todos=todos, current_date=today, view_type='today')
 
 @app.route('/yesterday')
