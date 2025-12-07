@@ -346,6 +346,11 @@ main {
     background: #138496;
 }
 
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
 .btn-carryover {
     background: #ffc107;
     color: #212529;
@@ -638,6 +643,108 @@ main {
     margin-bottom: 0;
 }
 
+/* 期日が過ぎているTodoの通知スタイル */
+.overdue-notification {
+    background: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.overdue-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.overdue-icon {
+    font-size: 24px;
+}
+
+.overdue-text {
+    flex: 1;
+    font-weight: 600;
+    color: #856404;
+}
+
+.overdue-toggle-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #856404;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.overdue-todos-list {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #ffc107;
+}
+
+.overdue-todo-item {
+    background: white;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.overdue-todo-item:last-child {
+    margin-bottom: 0;
+}
+
+.overdue-todo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.overdue-todo-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+    flex: 1;
+}
+
+.overdue-badge {
+    background: #dc3545;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.overdue-todo-content {
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.overdue-todo-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.overdue-todo-actions .btn-sm {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
 /* カレンダーモーダル専用スタイル */
 .calendar-modal-content {
     max-width: 500px;
@@ -805,6 +912,47 @@ main {
 
     .calendar-modal-body {
         padding: 15px;
+    }
+
+    /* 期日が過ぎているTodoの通知スタイル（モバイル） */
+    .overdue-notification {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .overdue-notification-content {
+        flex-wrap: wrap;
+    }
+
+    .overdue-text {
+        font-size: 14px;
+    }
+
+    .overdue-todo-item {
+        padding: 12px;
+    }
+
+    .overdue-todo-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .overdue-todo-header h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .overdue-todo-actions {
+        flex-direction: column;
+    }
+
+    .overdue-todo-actions .btn-sm {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+
+    .overdue-todo-actions .btn-sm:last-child {
+        margin-bottom: 0;
     }
 }
 

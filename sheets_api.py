@@ -184,6 +184,50 @@ class SheetsAPI:
         
         return todos
     
+    def get_overdue_todos(self):
+        """期日が過ぎている未完了のTodoを取得"""
+        today = datetime.now().date()
+        overdue_todos = []
+        
+        # 両方のワークシートを確認
+        for worksheet in [self.worksheet, self.future_worksheet]:
+            all_values = worksheet.get_all_values()
+            if len(all_values) <= 1:
+                continue
+            
+            for row in all_values[1:]:  # ヘッダーをスキップ
+                if row and row[0].isdigit():
+                    status = row[7] if len(row) > 7 else '未完了'
+                    due_date_str = row[4] if len(row) > 4 else ''
+                    
+                    # 未完了かつ期日が設定されているTodoのみをチェック
+                    if status != '完了' and due_date_str:
+                        try:
+                            # 期日を日付オブジェクトに変換
+                            due_date = datetime.strptime(due_date_str.strip(), '%Y-%m-%d').date()
+                            
+                            # 期日が今日より前（過ぎている）場合
+                            if due_date < today:
+                                todo = {
+                                    'id': int(row[0]),
+                                    'title': row[1] if len(row) > 1 else '',
+                                    'content': row[2] if len(row) > 2 else '',
+                                    'day_of_week': row[3] if len(row) > 3 else '',
+                                    'due_date': due_date_str.strip(),
+                                    'created_at': row[5] if len(row) > 5 else '',
+                                    'completed_at': row[6] if len(row) > 6 else '',
+                                    'status': status,
+                                    'target_date': row[8] if len(row) > 8 else ''
+                                }
+                                overdue_todos.append(todo)
+                        except (ValueError, AttributeError):
+                            # 期日の形式が正しくない場合はスキップ
+                            continue
+        
+        # 期日でソート（古い順）
+        overdue_todos.sort(key=lambda x: x['due_date'])
+        return overdue_todos
+    
     def get_todo_by_id(self, todo_id, target_date=None):
         """IDでTodoを取得"""
         # target_dateが指定されている場合、適切なワークシートを優先的に検索

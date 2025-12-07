@@ -35,7 +35,9 @@ def today():
     print(f"DEBUG: Today's date: {today} (ISO format: {today.strftime('%Y-%m-%d')})")
     todos = sheets_api.get_all_todos(target_date=today)
     print(f"DEBUG: Found {len(todos)} todos for today")
-    return render_template('index.html', todos=todos, current_date=today, view_type='today')
+    # 期日が過ぎている未完了のTodoを取得
+    overdue_todos = sheets_api.get_overdue_todos()
+    return render_template('index.html', todos=todos, current_date=today, view_type='today', overdue_todos=overdue_todos)
 
 @app.route('/yesterday')
 def yesterday():
@@ -44,7 +46,9 @@ def yesterday():
         return "エラー: Google Sheets APIが初期化されていません。", 500
     yesterday = (datetime.now() - timedelta(days=1)).date()
     todos = sheets_api.get_all_todos(target_date=yesterday)
-    return render_template('index.html', todos=todos, current_date=yesterday, view_type='yesterday')
+    # 期日が過ぎている未完了のTodoを取得
+    overdue_todos = sheets_api.get_overdue_todos()
+    return render_template('index.html', todos=todos, current_date=yesterday, view_type='yesterday', overdue_todos=overdue_todos)
 
 @app.route('/tomorrow')
 def tomorrow():
@@ -53,7 +57,9 @@ def tomorrow():
         return "エラー: Google Sheets APIが初期化されていません。", 500
     tomorrow_date = (datetime.now() + timedelta(days=1)).date()
     todos = sheets_api.get_all_todos(target_date=tomorrow_date)
-    return render_template('index.html', todos=todos, current_date=tomorrow_date, view_type='tomorrow')
+    # 期日が過ぎている未完了のTodoを取得
+    overdue_todos = sheets_api.get_overdue_todos()
+    return render_template('index.html', todos=todos, current_date=tomorrow_date, view_type='tomorrow', overdue_todos=overdue_todos)
 
 @app.route('/date/<date_str>')
 def date_view(date_str):
@@ -75,7 +81,9 @@ def date_view(date_str):
         else:
             view_type = 'custom'
         
-        return render_template('index.html', todos=todos, current_date=selected_date, view_type=view_type)
+        # 期日が過ぎている未完了のTodoを取得
+        overdue_todos = sheets_api.get_overdue_todos()
+        return render_template('index.html', todos=todos, current_date=selected_date, view_type=view_type, overdue_todos=overdue_todos)
     except ValueError:
         return redirect(url_for('today'))
 

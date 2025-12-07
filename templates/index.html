@@ -74,6 +74,45 @@
 
             <!-- Todoリストエリア -->
             <section class="todo-section" id="todo-section">
+            <!-- 期日が過ぎている未完了のTodoの通知 -->
+            {% if overdue_todos and overdue_todos|length > 0 %}
+            <div class="overdue-notification" id="overdue-notification">
+                <div class="overdue-notification-content" id="overdue-notification-content">
+                    <span class="overdue-icon">⚠️</span>
+                    <span class="overdue-text">期日が過ぎている未完了のTodoが{{ overdue_todos|length }}件あります</span>
+                    <button class="overdue-toggle-btn" id="overdue-toggle-btn">▼</button>
+                </div>
+                <div class="overdue-todos-list" id="overdue-todos-list" style="display: none;">
+                    {% for todo in overdue_todos %}
+                    <div class="overdue-todo-item">
+                        <div class="overdue-todo-header">
+                            <h3>{{ todo.title }}</h3>
+                            <span class="overdue-badge">期日: {{ todo.due_date }}</span>
+                        </div>
+                        {% if todo.content %}
+                        <p class="overdue-todo-content">{{ todo.content }}</p>
+                        {% endif %}
+                        <div class="overdue-todo-actions">
+                            <form action="{{ url_for('complete_todo', todo_id=todo.id) }}" method="POST" class="action-form">
+                                <input type="hidden" name="view_type" value="{{ view_type }}">
+                                <input type="hidden" name="selected_date" value="{{ current_date.strftime('%Y-%m-%d') if current_date else '' }}">
+                                <button type="submit" class="btn btn-complete btn-sm">完了</button>
+                            </form>
+                            <form action="{{ url_for('carryover_todo', todo_id=todo.id) }}" method="POST" class="action-form">
+                                <button type="submit" class="btn btn-carryover btn-sm" onclick="return confirm('次の日に持越しますか？')">持越し</button>
+                            </form>
+                            <a href="{{ url_for('edit_todo', todo_id=todo.id) }}" class="btn btn-edit btn-sm">編集</a>
+                            <form action="{{ url_for('delete_todo', todo_id=todo.id) }}" method="POST" class="action-form" onsubmit="return confirm('このTodoを削除しますか？')">
+                                <input type="hidden" name="view_type" value="{{ view_type }}">
+                                <input type="hidden" name="selected_date" value="{{ current_date.strftime('%Y-%m-%d') if current_date else '' }}">
+                                <button type="submit" class="btn btn-delete btn-sm">削除</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             {% if todos %}
             <div class="todo-list">
                 {% for todo in todos %}
@@ -664,6 +703,40 @@
         
         // 初期表示
         renderCalendar();
+
+        // 期日が過ぎているTodoの通知の展開/折りたたみ
+        const overdueToggleBtn = document.getElementById('overdue-toggle-btn');
+        const overdueTodosList = document.getElementById('overdue-todos-list');
+        const overdueNotificationContent = document.getElementById('overdue-notification-content');
+        
+        if (overdueToggleBtn && overdueTodosList) {
+            // ボタンクリックで展開/折りたたみ
+            overdueToggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (overdueTodosList.style.display === 'none') {
+                    overdueTodosList.style.display = 'block';
+                    overdueToggleBtn.textContent = '▲';
+                } else {
+                    overdueTodosList.style.display = 'none';
+                    overdueToggleBtn.textContent = '▼';
+                }
+            });
+            
+            // 通知エリア全体をクリックしても展開/折りたたみ
+            if (overdueNotificationContent) {
+                overdueNotificationContent.addEventListener('click', (e) => {
+                    if (e.target !== overdueToggleBtn) {
+                        if (overdueTodosList.style.display === 'none') {
+                            overdueTodosList.style.display = 'block';
+                            overdueToggleBtn.textContent = '▲';
+                        } else {
+                            overdueTodosList.style.display = 'none';
+                            overdueToggleBtn.textContent = '▼';
+                        }
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
