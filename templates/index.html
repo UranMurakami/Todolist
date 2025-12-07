@@ -208,10 +208,35 @@
         </div>
     </div>
 
+    <!-- カレンダーモーダル（モバイル用） -->
+    <div id="calendar-modal" class="modal calendar-modal">
+        <div class="modal-content calendar-modal-content">
+            <div class="modal-header">
+                <h2>📅 カレンダー</h2>
+                <button class="modal-close" id="close-calendar-modal">&times;</button>
+            </div>
+            <div class="modal-body calendar-modal-body">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button id="calendar-modal-prev-month" class="calendar-nav-btn">‹</button>
+                        <h3 id="calendar-modal-month-year"></h3>
+                        <button id="calendar-modal-next-month" class="calendar-nav-btn">›</button>
+                    </div>
+                    <div id="calendar-modal-calendar" class="calendar"></div>
+                    <div class="calendar-footer">
+                        <button id="calendar-modal-today-btn" class="btn btn-secondary">今日に戻る</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 共通のDOM要素を取得
         const helpBtn = document.getElementById('help-btn');
         const helpModal = document.getElementById('help-modal');
+        const calendarModal = document.getElementById('calendar-modal');
+        const closeCalendarModalBtn = document.getElementById('close-calendar-modal');
         const closeHelp = document.getElementById('close-help');
         const mobileMenuBtn = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
@@ -301,6 +326,46 @@
             }
         };
 
+        // カレンダーモーダルの表示
+        const showCalendarModal = () => {
+            if (calendarModal) {
+                calendarModal.style.display = 'block';
+                // モーダル表示時、ハンバーガーメニューボタンを非表示
+                if (mobileMenuBtn) {
+                    mobileMenuBtn.style.display = 'none';
+                }
+                // モーダル内のカレンダーを描画
+                renderCalendarModal();
+            }
+        };
+
+        // カレンダーモーダルの非表示
+        const hideCalendarModal = () => {
+            if (calendarModal) {
+                calendarModal.style.display = 'none';
+                // モーダル非表示時、ハンバーガーメニューボタンを再表示（モバイル表示時のみ）
+                if (mobileMenuBtn && isMobile()) {
+                    mobileMenuBtn.style.display = 'flex';
+                }
+            }
+        };
+
+        // カレンダーモーダルの閉じるボタン
+        if (closeCalendarModalBtn) {
+            closeCalendarModalBtn.addEventListener('click', () => {
+                hideCalendarModal();
+            });
+        }
+
+        // モーダル外クリックで閉じる
+        if (calendarModal) {
+            calendarModal.addEventListener('click', (e) => {
+                if (e.target === calendarModal) {
+                    hideCalendarModal();
+                }
+            });
+        }
+
         // デスクトップ用の操作方法ボタン
         if (helpBtn) {
             helpBtn.addEventListener('click', () => {
@@ -353,13 +418,9 @@
                     if (mobileMenu) mobileMenu.classList.remove('active');
 
                     if (view === 'calendar') {
-                        // モバイル表示時はカレンダーのみを表示
+                        // モバイル表示時はカレンダーモーダルを表示
                         if (isMobile()) {
-                            showCalendarOnly();
-                            // カレンダーが確実に描画されるように少し遅延して再描画
-                            setTimeout(() => {
-                                renderCalendar();
-                            }, 150);
+                            showCalendarModal();
                         } else {
                             showCalendar();
                         }
@@ -390,6 +451,77 @@
         let currentYear = currentDate.getFullYear();
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
+
+        // モーダル内カレンダー用の変数（デスクトップ用と独立）
+        let modalCurrentMonth = currentMonth;
+        let modalCurrentYear = currentYear;
+
+        // モーダル内のカレンダーを描画する関数
+        function renderCalendarModal() {
+            const firstDay = new Date(modalCurrentYear, modalCurrentMonth, 1).getDay();
+            const daysInMonth = new Date(modalCurrentYear, modalCurrentMonth + 1, 0).getDate();
+            const calendarEl = document.getElementById('calendar-modal-calendar');
+            const monthYearEl = document.getElementById('calendar-modal-month-year');
+            
+            if (!calendarEl || !monthYearEl) return;
+            
+            // 月と年を表示
+            const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            monthYearEl.textContent = `${modalCurrentYear}年 ${monthNames[modalCurrentMonth]}`;
+            
+            // カレンダーをクリア
+            calendarEl.innerHTML = '';
+            
+            // 曜日のヘッダー
+            const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+            weekDays.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-weekday';
+                dayHeader.textContent = day;
+                calendarEl.appendChild(dayHeader);
+            });
+            
+            // 空のセル（月初めまで）
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day empty';
+                calendarEl.appendChild(emptyCell);
+            }
+            
+            // 日付セル
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = day;
+                
+                const dateStr = `${modalCurrentYear}-${String(modalCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                dayCell.dataset.date = dateStr;
+                
+                // 今日の日付をハイライト
+                if (dateStr === todayStr) {
+                    dayCell.classList.add('today');
+                }
+                
+                // 選択されている日付をハイライト
+                const selectedDateStr = '{{ current_date.strftime("%Y-%m-%d") if current_date else "" }}';
+                if (dateStr === selectedDateStr) {
+                    dayCell.classList.add('selected');
+                }
+                
+                // 過去の日付のスタイル
+                const cellDate = new Date(modalCurrentYear, modalCurrentMonth, day);
+                if (cellDate < today && dateStr !== todayStr) {
+                    dayCell.classList.add('past');
+                }
+                
+                // 日付クリック時にその日のTodo画面に遷移
+                dayCell.addEventListener('click', () => {
+                    window.location.href = `/date/${dateStr}`;
+                });
+                
+                calendarEl.appendChild(dayCell);
+            }
+        }
 
         function renderCalendar() {
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -475,6 +607,39 @@
         document.getElementById('today-btn').addEventListener('click', () => {
             window.location.href = '/today';
         });
+        
+        // モーダル内カレンダーの月移動ボタン
+        const modalPrevMonthBtn = document.getElementById('calendar-modal-prev-month');
+        const modalNextMonthBtn = document.getElementById('calendar-modal-next-month');
+        const modalTodayBtn = document.getElementById('calendar-modal-today-btn');
+        
+        if (modalPrevMonthBtn) {
+            modalPrevMonthBtn.addEventListener('click', () => {
+                modalCurrentMonth--;
+                if (modalCurrentMonth < 0) {
+                    modalCurrentMonth = 11;
+                    modalCurrentYear--;
+                }
+                renderCalendarModal();
+            });
+        }
+        
+        if (modalNextMonthBtn) {
+            modalNextMonthBtn.addEventListener('click', () => {
+                modalCurrentMonth++;
+                if (modalCurrentMonth > 11) {
+                    modalCurrentMonth = 0;
+                    modalCurrentYear++;
+                }
+                renderCalendarModal();
+            });
+        }
+        
+        if (modalTodayBtn) {
+            modalTodayBtn.addEventListener('click', () => {
+                window.location.href = '/today';
+            });
+        }
         
         // 初期表示
         renderCalendar();

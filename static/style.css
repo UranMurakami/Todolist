@@ -637,6 +637,21 @@ main {
     margin-bottom: 0;
 }
 
+/* カレンダーモーダル専用スタイル */
+.calendar-modal-content {
+    max-width: 500px;
+}
+
+.calendar-modal-body {
+    padding: 20px;
+}
+
+.calendar-modal-body .calendar-container {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
 .modal-body h3 {
     color: #667eea;
     font-size: 18px;
@@ -771,6 +786,16 @@ main {
 
     .calendar-day {
         font-size: 12px;
+    }
+
+    /* カレンダーモーダル専用スタイル（モバイル） */
+    .calendar-modal-content {
+        max-width: 95%;
+        max-height: 90vh;
+    }
+
+    .calendar-modal-body {
+        padding: 15px;
     }
 }
 
