@@ -216,7 +216,8 @@ main {
     background: #5568d3;
 }
 
-#calendar {
+#calendar,
+.calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 5px;
@@ -650,6 +651,14 @@ main {
     background: transparent;
     box-shadow: none;
     padding: 0;
+}
+
+/* カレンダーモーダル内のカレンダーのグリッドレイアウト */
+#calendar-modal-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 15px;
 }
 
 .modal-body h3 {
