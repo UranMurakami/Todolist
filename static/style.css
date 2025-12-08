@@ -318,6 +318,7 @@ main {
     color: white;
     padding: 6px 12px;
     font-size: 13px;
+    text-align: center;
 }
 
 .btn-edit:hover {
@@ -329,6 +330,7 @@ main {
     color: white;
     padding: 6px 12px;
     font-size: 13px;
+    text-align: center;
 }
 
 .btn-delete:hover {
@@ -340,6 +342,7 @@ main {
     color: white;
     padding: 6px 12px;
     font-size: 13px;
+    text-align: center;
 }
 
 .btn-complete:hover {
@@ -349,6 +352,7 @@ main {
 .btn-sm {
     padding: 6px 12px;
     font-size: 13px;
+    text-align: center;
 }
 
 .btn-carryover {
@@ -356,6 +360,7 @@ main {
     color: #212529;
     padding: 6px 12px;
     font-size: 13px;
+    text-align: center;
 }
 
 .btn-carryover:hover {

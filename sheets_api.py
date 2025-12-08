@@ -182,6 +182,15 @@ class SheetsAPI:
                     else:
                         todos.append(todo)
         
+        # 期限順にソート（期限がないものは最後に配置）
+        def sort_key(todo):
+            due_date = todo.get('due_date', '').strip()
+            if not due_date:
+                # 期限がないものは最後に表示するため、非常に大きい値を返す
+                return '9999-12-31'
+            return due_date
+        
+        todos.sort(key=sort_key)
         return todos
     
     def get_overdue_todos(self):

@@ -158,9 +158,6 @@
                         {% if todo.due_date %}
                         <span class="due-date">📅 期日: {{ todo.due_date }}</span>
                         {% endif %}
-                        {% if todo.created_at %}
-                        <span class="created-at">作成日時: {{ todo.created_at }}</span>
-                        {% endif %}
                         {% if todo.completed_at %}
                         <span class="completed-at">✅ 完了日時: {{ todo.completed_at }}</span>
                         {% endif %}
@@ -189,6 +186,12 @@
                 <section>
                     <h3>🎯 基本的な使い方</h3>
                     <p>このTodoリストアプリは、Googleスプレッドシートを使ってTodoを管理できます。日付ごとにTodoを追加・編集・削除することができます。</p>
+                    <p><strong>タスク管理方針</strong>:</p>
+                    <ul>
+                        <li>ユーザーには<strong>期限のみを見せて管理</strong>します</li>
+                        <li>一日のタスク、未来・過去のタスクも<strong>期限順で表示</strong>されます</li>
+                        <li>作成日時は表示されませんが、スプレッドシート内で保持されます（履歴管理や分析に利用可能）</li>
+                    </ul>
                 </section>
 
                 <section>
@@ -207,6 +210,7 @@
                         <li>タイトル（必須）、内容、期日、対象日を入力</li>
                         <li>「追加」ボタンをクリック</li>
                     </ol>
+                    <p><strong>期日</strong>: タスクの期限を設定します。Todoリストは<strong>期限順に自動的に並び替え</strong>られます（期限がないものは最後に表示されます）。</p>
                     <p><strong>対象日</strong>: Todoを表示する日付を指定します。カレンダーで選択した日付が自動的に設定されます。</p>
                 </section>
 
@@ -227,20 +231,32 @@
                 </section>
 
                 <section>
+                    <h3>⚠️ 期日超過通知機能</h3>
+                    <ul>
+                        <li>期日が過ぎている未完了のTodoがある場合、Todoリスト上部に<strong>警告通知</strong>が表示されます</li>
+                        <li>通知をタップすると、期日超過のTodo一覧が展開・折りたたみできます</li>
+                        <li>期日超過のTodoに対しては、<strong>完了・持越し・編集・削除</strong>の操作が可能です</li>
+                    </ul>
+                </section>
+
+                <section>
                     <h3>🗂️ スプレッドシートについて</h3>
                     <ul>
                         <li><strong>1枚目「Todos」</strong>: 過去・今日・昨日・明日のTodoが保存されます</li>
                         <li><strong>2枚目「Todos_Future」</strong>: 明日以降の未来のTodoが自動的に保存されます</li>
                         <li>スプレッドシートで直接データを確認・編集することも可能です</li>
+                        <li><strong>作成日時</strong>: 画面上には表示されませんが、スプレッドシート内の「作成日時」列でいつ追加されたかを確認できます（履歴管理や分析に利用可能）</li>
                     </ul>
                 </section>
 
                 <section>
                     <h3>💡 便利な機能</h3>
                     <ul>
+                        <li><strong>期限順表示</strong>: Todoリストは自動的に<strong>期限順に並び替え</strong>られます。期限が近い順に確認できるため、優先順位が一目で分かります</li>
                         <li><strong>カレンダーでの日付選択</strong>: 過去や未来のTodoも簡単に確認できます</li>
                         <li><strong>完了状態の色分け</strong>: 完了済みTodoは緑色で表示され、一目で区別できます</li>
                         <li><strong>曜日自動計算</strong>: 期日を設定すると、自動的に曜日が計算されます</li>
+                        <li><strong>期日超過通知</strong>: 期日が過ぎた未完了のTodoを自動的に検出し、警告通知でお知らせします</li>
                     </ul>
                 </section>
             </div>
