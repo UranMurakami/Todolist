@@ -2,6 +2,18 @@ import gspread
 from google.oauth2.service_account import Credentials
 import os
 from datetime import datetime, timedelta
+import pytz
+
+# 日本時間（JST）のタイムゾーン
+JST = pytz.timezone('Asia/Tokyo')
+
+def get_jst_now():
+    """現在の日本時間を取得"""
+    return datetime.now(JST)
+
+def get_jst_today():
+    """今日の日付を日本時間で取得"""
+    return get_jst_now().date()
 
 class SheetsAPI:
     def __init__(self):
@@ -77,7 +89,7 @@ class SheetsAPI:
     def _get_worksheet_by_due_date(self, due_date):
         """期日に応じて適切なワークシートを返す"""
         if due_date:
-            today = datetime.now().date()
+            today = get_jst_today()
             if isinstance(due_date, str):
                 try:
                     due_date = datetime.strptime(due_date, '%Y-%m-%d').date()
@@ -171,10 +183,14 @@ class SheetsAPI:
         # 期日でフィルタリング
         if due_date_filter_str:
             todos = []
+            print(f"DEBUG: Filtering todos by due_date='{due_date_filter_str}'")
             for todo in all_todos:
                 todo_due_date = todo['due_date'].strip() if todo['due_date'] else ''
+                if len(todos) < 3:  # 最初の数件のみデバッグ出力
+                    print(f"DEBUG: Comparing filter='{due_date_filter_str}' with todo_due_date='{todo_due_date}' (Title: {todo.get('title', 'N/A')})")
                 if todo_due_date == due_date_filter_str:
                     todos.append(todo)
+            print(f"DEBUG: Found {len(todos)} todos matching due_date='{due_date_filter_str}'")
         else:
             todos = all_todos
         
@@ -191,7 +207,7 @@ class SheetsAPI:
     
     def get_overdue_todos(self):
         """期日が過ぎている未完了のTodoを取得"""
-        today = datetime.now().date()
+        today = get_jst_today()
         overdue_todos = []
         
         # 両方のワークシートを確認
@@ -259,7 +275,7 @@ class SheetsAPI:
         worksheet = self._get_worksheet_by_due_date(due_date)
         
         todo_id = self._get_next_id(worksheet)
-        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        created_at = get_jst_now().strftime('%Y-%m-%d %H:%M:%S')
         
         # 期日から曜日を計算
         day_of_week = ''
@@ -338,7 +354,7 @@ class SheetsAPI:
             all_values = worksheet.get_all_values()
             for i, row in enumerate(all_values[1:], start=2):
                 if row and row[0] == str(todo_id):
-                    completed_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    completed_at = get_jst_now().strftime('%Y-%m-%d %H:%M:%S')
                     worksheet.update(f'H{i}', [['完了']])
                     worksheet.update(f'G{i}', [[completed_at]])
                     return True
