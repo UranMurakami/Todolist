@@ -31,10 +31,8 @@ def today():
     if sheets_api is None:
         return "エラー: Google Sheets APIが初期化されていません。ターミナルのエラーメッセージを確認してください。", 500
     today = datetime.now().date()
-    # デバッグ用: 今日の日付を出力
-    print(f"DEBUG: Today's date: {today} (ISO format: {today.strftime('%Y-%m-%d')})")
-    todos = sheets_api.get_all_todos(target_date=today)
-    print(f"DEBUG: Found {len(todos)} todos for today")
+    # 今日を期日とするTodoを取得
+    todos = sheets_api.get_all_todos(due_date_filter=today)
     # 期日が過ぎている未完了のTodoを取得
     overdue_todos = sheets_api.get_overdue_todos()
     return render_template('index.html', todos=todos, current_date=today, view_type='today', overdue_todos=overdue_todos)
@@ -45,7 +43,8 @@ def yesterday():
     if sheets_api is None:
         return "エラー: Google Sheets APIが初期化されていません。", 500
     yesterday = (datetime.now() - timedelta(days=1)).date()
-    todos = sheets_api.get_all_todos(target_date=yesterday)
+    # 昨日を期日とするTodoを取得
+    todos = sheets_api.get_all_todos(due_date_filter=yesterday)
     # 期日が過ぎている未完了のTodoを取得
     overdue_todos = sheets_api.get_overdue_todos()
     return render_template('index.html', todos=todos, current_date=yesterday, view_type='yesterday', overdue_todos=overdue_todos)
@@ -56,19 +55,21 @@ def tomorrow():
     if sheets_api is None:
         return "エラー: Google Sheets APIが初期化されていません。", 500
     tomorrow_date = (datetime.now() + timedelta(days=1)).date()
-    todos = sheets_api.get_all_todos(target_date=tomorrow_date)
+    # 明日を期日とするTodoを取得
+    todos = sheets_api.get_all_todos(due_date_filter=tomorrow_date)
     # 期日が過ぎている未完了のTodoを取得
     overdue_todos = sheets_api.get_overdue_todos()
     return render_template('index.html', todos=todos, current_date=tomorrow_date, view_type='tomorrow', overdue_todos=overdue_todos)
 
 @app.route('/date/<date_str>')
 def date_view(date_str):
-    """指定日付のTodo一覧ページ"""
+    """指定日付を期日とするTodo一覧ページ"""
     if sheets_api is None:
         return "エラー: Google Sheets APIが初期化されていません。", 500
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        todos = sheets_api.get_all_todos(target_date=selected_date)
+        # 指定日付を期日とするTodoを取得
+        todos = sheets_api.get_all_todos(due_date_filter=selected_date)
         
         # 今日との比較でview_typeを決定
         today = datetime.now().date()
@@ -96,63 +97,45 @@ def add_todo():
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         due_date = request.form.get('due_date', '').strip()
-        target_date_str = request.form.get('target_date', '').strip()
-        
-        target_date = None
-        if target_date_str:
-            try:
-                target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
-            except:
-                pass
         
         if title:
-            sheets_api.add_todo(title, content, due_date, target_date)
-            # 対象日に応じてリダイレクト
-            if target_date:
-                today = datetime.now().date()
-                if target_date == today:
-                    return redirect(url_for('today'))
-                elif target_date == today - timedelta(days=1):
-                    return redirect(url_for('yesterday'))
-                elif target_date == today + timedelta(days=1):
-                    return redirect(url_for('tomorrow'))
-                else:
-                    return redirect(url_for('date_view', date_str=target_date.strftime('%Y-%m-%d')))
+            sheets_api.add_todo(title, content, due_date)
+            # 期日に応じてリダイレクト
+            if due_date:
+                try:
+                    due_date_obj = datetime.strptime(due_date, '%Y-%m-%d').date()
+                    today = datetime.now().date()
+                    if due_date_obj == today:
+                        return redirect(url_for('today'))
+                    elif due_date_obj == today - timedelta(days=1):
+                        return redirect(url_for('yesterday'))
+                    elif due_date_obj == today + timedelta(days=1):
+                        return redirect(url_for('tomorrow'))
+                    else:
+                        return redirect(url_for('date_view', date_str=due_date))
+                except:
+                    pass
             return redirect(url_for('today'))
     
-    # GETリクエスト時、view_typeパラメータから対象日を取得
+    # GETリクエスト時、view_typeパラメータから期日のデフォルト値を取得
     view_type = request.args.get('view', 'today')
-    target_date_param = request.args.get('target_date', '')
-    
-    if target_date_param:
-        try:
-            target_date = datetime.strptime(target_date_param, '%Y-%m-%d').date()
-        except:
-            target_date = datetime.now().date()
+    due_date_default = ''
+    if view_type == 'tomorrow':
+        due_date_default = (datetime.now() + timedelta(days=1)).date().strftime('%Y-%m-%d')
+    elif view_type == 'yesterday':
+        due_date_default = (datetime.now() - timedelta(days=1)).date().strftime('%Y-%m-%d')
     else:
-        target_date = datetime.now().date()
-        if view_type == 'tomorrow':
-            target_date = datetime.now().date() + timedelta(days=1)
-        elif view_type == 'yesterday':
-            target_date = datetime.now().date() - timedelta(days=1)
+        due_date_default = datetime.now().date().strftime('%Y-%m-%d')
     
-    return render_template('edit.html', todo=None, target_date=target_date.strftime('%Y-%m-%d'), view_type=view_type)
+    return render_template('edit.html', todo=None, due_date_default=due_date_default, view_type=view_type)
 
 @app.route('/edit/<int:todo_id>', methods=['GET', 'POST'])
 def edit_todo(todo_id):
     """Todo編集ページ"""
     if sheets_api is None:
         return "エラー: Google Sheets APIが初期化されていません。", 500
-    # 対象日を取得（URLパラメータから）
-    target_date_param = request.args.get('target_date', '')
-    target_date_for_search = None
-    if target_date_param:
-        try:
-            target_date_for_search = datetime.strptime(target_date_param, '%Y-%m-%d').date()
-        except:
-            pass
     
-    todo = sheets_api.get_todo_by_id(todo_id, target_date_for_search)
+    todo = sheets_api.get_todo_by_id(todo_id)
     if not todo:
         return redirect(url_for('today'))
     
@@ -160,49 +143,41 @@ def edit_todo(todo_id):
         title = request.form.get('title', '').strip()
         content = request.form.get('content', '').strip()
         due_date = request.form.get('due_date', '').strip()
-        target_date_str = request.form.get('target_date', '').strip()
-        
-        target_date = None
-        if target_date_str:
-            try:
-                target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
-            except:
-                pass
         
         if title:
-            sheets_api.update_todo(todo_id, title, content, due_date, target_date)
-            # 対象日に応じてリダイレクト
-            if target_date:
-                today = datetime.now().date()
-                if target_date == today:
-                    return redirect(url_for('today'))
-                elif target_date == today - timedelta(days=1):
-                    return redirect(url_for('yesterday'))
-                elif target_date == today + timedelta(days=1):
-                    return redirect(url_for('tomorrow'))
-                else:
-                    return redirect(url_for('date_view', date_str=target_date.strftime('%Y-%m-%d')))
+            sheets_api.update_todo(todo_id, title, content, due_date)
+            # 期日に応じてリダイレクト
+            if due_date:
+                try:
+                    due_date_obj = datetime.strptime(due_date, '%Y-%m-%d').date()
+                    today = datetime.now().date()
+                    if due_date_obj == today:
+                        return redirect(url_for('today'))
+                    elif due_date_obj == today - timedelta(days=1):
+                        return redirect(url_for('yesterday'))
+                    elif due_date_obj == today + timedelta(days=1):
+                        return redirect(url_for('tomorrow'))
+                    else:
+                        return redirect(url_for('date_view', date_str=due_date))
+                except:
+                    pass
             return redirect(url_for('today'))
     
-    # 対象日を取得
-    target_date_str = todo.get('target_date', '')
+    # view_typeを期日から決定
     view_type = 'today'
-    if target_date_str:
+    due_date_str = todo.get('due_date', '')
+    if due_date_str:
         try:
-            target_date_obj = datetime.strptime(target_date_str, '%Y-%m-%d').date()
+            due_date_obj = datetime.strptime(due_date_str, '%Y-%m-%d').date()
             today = datetime.now().date()
-            if target_date_obj == today - timedelta(days=1):
+            if due_date_obj == today - timedelta(days=1):
                 view_type = 'yesterday'
-            elif target_date_obj == today + timedelta(days=1):
+            elif due_date_obj == today + timedelta(days=1):
                 view_type = 'tomorrow'
         except:
             pass
     
-    # 対象日が空の場合は今日の日付を使用
-    if not target_date_str:
-        target_date_str = datetime.now().date().strftime('%Y-%m-%d')
-    
-    return render_template('edit.html', todo=todo, target_date=target_date_str, view_type=view_type)
+    return render_template('edit.html', todo=todo, view_type=view_type)
 
 @app.route('/delete/<int:todo_id>', methods=['POST'])
 def delete_todo(todo_id):
@@ -214,6 +189,7 @@ def delete_todo(todo_id):
     selected_date = request.form.get('selected_date', '')
     sheets_api.delete_todo(todo_id)
     
+    # 削除後、同じページにリダイレクト
     if selected_date:
         return redirect(url_for('date_view', date_str=selected_date))
     elif view_type == 'yesterday':
@@ -241,11 +217,13 @@ def complete_todo(todo_id):
 
 @app.route('/carryover/<int:todo_id>', methods=['POST'])
 def carryover_todo(todo_id):
-    """Todoを次の日に持越す"""
+    """Todoを次の日に持越す（期日を明日に変更）"""
     if sheets_api is None:
         return "エラー: Google Sheets APIが初期化されていません。", 500
-    tomorrow_date = datetime.now().date() + timedelta(days=1)
-    sheets_api.carryover_todo(todo_id, tomorrow_date)
+    tomorrow_date_str = (datetime.now().date() + timedelta(days=1)).strftime('%Y-%m-%d')
+    todo = sheets_api.get_todo_by_id(todo_id)
+    if todo:
+        sheets_api.carryover_todo(todo_id, tomorrow_date_str)
     return redirect(url_for('tomorrow'))
 
 if __name__ == '__main__':

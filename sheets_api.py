@@ -74,18 +74,18 @@ class SheetsAPI:
             worksheet = self.spreadsheet.add_worksheet(title='Todos_Future', rows=1000, cols=10)
         return worksheet
     
-    def _get_worksheet_by_date(self, target_date):
-        """日付に応じて適切なワークシートを返す"""
-        if target_date:
+    def _get_worksheet_by_due_date(self, due_date):
+        """期日に応じて適切なワークシートを返す"""
+        if due_date:
             today = datetime.now().date()
-            if isinstance(target_date, str):
+            if isinstance(due_date, str):
                 try:
-                    target_date = datetime.strptime(target_date, '%Y-%m-%d').date()
+                    due_date = datetime.strptime(due_date, '%Y-%m-%d').date()
                 except:
-                    target_date = today
+                    return self.worksheet
             
-            # 明日以降（未来）の日付なら未来用シート
-            if target_date > today + timedelta(days=1):
+            # 明日以降（未来）の期日なら未来用シート
+            if due_date > today + timedelta(days=1):
                 return self.future_worksheet
         
         # それ以外は通常のシート
@@ -126,61 +126,57 @@ class SheetsAPI:
         
         return max(ids) + 1 if ids else 1
     
-    def get_all_todos(self, target_date=None):
-        """すべてのTodoを取得（対象日でフィルタリング可能）"""
-        # target_dateを正規化
-        if target_date:
-            if hasattr(target_date, 'strftime'):
-                target_date_obj = target_date
-                target_date_str = target_date.strftime('%Y-%m-%d')
-            elif isinstance(target_date, str):
+    def get_all_todos(self, due_date_filter=None):
+        """すべてのTodoを取得（期日でフィルタリング可能）"""
+        # due_date_filterを正規化
+        if due_date_filter:
+            if hasattr(due_date_filter, 'strftime'):
+                due_date_filter_obj = due_date_filter
+                due_date_filter_str = due_date_filter.strftime('%Y-%m-%d')
+            elif isinstance(due_date_filter, str):
                 try:
-                    target_date_obj = datetime.strptime(target_date, '%Y-%m-%d').date()
-                    target_date_str = target_date_obj.strftime('%Y-%m-%d')
+                    due_date_filter_obj = datetime.strptime(due_date_filter, '%Y-%m-%d').date()
+                    due_date_filter_str = due_date_filter_obj.strftime('%Y-%m-%d')
                 except:
-                    target_date_obj = None
-                    target_date_str = target_date.strip()
+                    due_date_filter_obj = None
+                    due_date_filter_str = due_date_filter.strip()
             else:
-                target_date_obj = None
-                target_date_str = str(target_date)
+                due_date_filter_obj = None
+                due_date_filter_str = str(due_date_filter)
         else:
-            target_date_obj = None
-            target_date_str = None
+            due_date_filter_obj = None
+            due_date_filter_str = None
         
-        # 適切なワークシートを選択
-        worksheet = self._get_worksheet_by_date(target_date_obj if target_date_obj else target_date)
+        # 両方のワークシートから取得（フィルタリングは後で行う）
+        all_todos = []
+        for worksheet in [self.worksheet, self.future_worksheet]:
+            all_values = worksheet.get_all_values()
+            
+            if len(all_values) > 1:
+                for row in all_values[1:]:  # ヘッダーをスキップ
+                    if row and row[0].isdigit():
+                        todo = {
+                            'id': int(row[0]),
+                            'title': row[1] if len(row) > 1 else '',
+                            'content': row[2] if len(row) > 2 else '',
+                            'day_of_week': row[3] if len(row) > 3 else '',
+                            'due_date': row[4] if len(row) > 4 else '',
+                            'created_at': row[5] if len(row) > 5 else '',
+                            'completed_at': row[6] if len(row) > 6 else '',
+                            'status': row[7] if len(row) > 7 else '未完了',
+                            'target_date': row[8] if len(row) > 8 else ''  # 互換性のため保持
+                        }
+                        all_todos.append(todo)
         
-        all_values = worksheet.get_all_values()
-        todos = []
-        
-        if len(all_values) > 1:
-            for row in all_values[1:]:  # ヘッダーをスキップ
-                if row and row[0].isdigit():
-                    todo = {
-                        'id': int(row[0]),
-                        'title': row[1] if len(row) > 1 else '',
-                        'content': row[2] if len(row) > 2 else '',
-                        'day_of_week': row[3] if len(row) > 3 else '',
-                        'due_date': row[4] if len(row) > 4 else '',
-                        'created_at': row[5] if len(row) > 5 else '',
-                        'completed_at': row[6] if len(row) > 6 else '',
-                        'status': row[7] if len(row) > 7 else '未完了',
-                        'target_date': row[8] if len(row) > 8 else ''
-                    }
-                    # 対象日でフィルタリング
-                    if target_date_str:
-                        # スプレッドシートから読み込んだtarget_dateを正規化（空白削除）
-                        todo_target_date = todo['target_date'].strip() if todo['target_date'] else ''
-                        
-                        # デバッグ用: 比較値を出力（最初の数件のみ）
-                        if len(todos) < 3:
-                            print(f"DEBUG: Comparing target_date_str='{target_date_str}' with todo_target_date='{todo_target_date}' (Title: {todo.get('title', 'N/A')})")
-                        
-                        # 日付の比較（完全一致）
-                        if todo_target_date == target_date_str:
-                            todos.append(todo)
-                    else:
-                        todos.append(todo)
+        # 期日でフィルタリング
+        if due_date_filter_str:
+            todos = []
+            for todo in all_todos:
+                todo_due_date = todo['due_date'].strip() if todo['due_date'] else ''
+                if todo_due_date == due_date_filter_str:
+                    todos.append(todo)
+        else:
+            todos = all_todos
         
         # 期限順にソート（期限がないものは最後に配置）
         def sort_key(todo):
@@ -237,32 +233,9 @@ class SheetsAPI:
         overdue_todos.sort(key=lambda x: x['due_date'])
         return overdue_todos
     
-    def get_todo_by_id(self, todo_id, target_date=None):
+    def get_todo_by_id(self, todo_id):
         """IDでTodoを取得"""
-        # target_dateが指定されている場合、適切なワークシートを優先的に検索
-        if target_date:
-            # まず適切なワークシートから検索
-            target_worksheet = self._get_worksheet_by_date(target_date)
-            all_values = target_worksheet.get_all_values()
-            for row in all_values[1:]:  # ヘッダーをスキップ
-                if row and row[0] == str(todo_id):
-                    todo_target_date = row[8] if len(row) > 8 else ''
-                    target_date_str = target_date.strftime('%Y-%m-%d') if hasattr(target_date, 'strftime') else str(target_date)
-                    # 対象日が一致する場合のみ返す
-                    if todo_target_date == target_date_str:
-                        return {
-                            'id': int(row[0]),
-                            'title': row[1] if len(row) > 1 else '',
-                            'content': row[2] if len(row) > 2 else '',
-                            'day_of_week': row[3] if len(row) > 3 else '',
-                            'due_date': row[4] if len(row) > 4 else '',
-                            'created_at': row[5] if len(row) > 5 else '',
-                            'completed_at': row[6] if len(row) > 6 else '',
-                            'status': row[7] if len(row) > 7 else '未完了',
-                            'target_date': todo_target_date
-                        }
-        
-        # target_dateがない場合、またはtarget_dateで見つからなかった場合、両方のワークシートを検索
+        # 両方のワークシートを検索
         for worksheet in [self.worksheet, self.future_worksheet]:
             all_values = worksheet.get_all_values()
             for row in all_values[1:]:  # ヘッダーをスキップ
@@ -276,23 +249,14 @@ class SheetsAPI:
                         'created_at': row[5] if len(row) > 5 else '',
                         'completed_at': row[6] if len(row) > 6 else '',
                         'status': row[7] if len(row) > 7 else '未完了',
-                        'target_date': row[8] if len(row) > 8 else ''
+                        'target_date': row[8] if len(row) > 8 else ''  # 互換性のため保持
                     }
         return None
     
-    def add_todo(self, title, content, due_date, target_date=None):
+    def add_todo(self, title, content, due_date):
         """Todoを追加"""
-        # 対象日が指定されない場合は今日
-        if target_date is None:
-            target_date = datetime.now().date()
-        elif isinstance(target_date, str):
-            try:
-                target_date = datetime.strptime(target_date, '%Y-%m-%d').date()
-            except:
-                target_date = datetime.now().date()
-        
-        # 適切なワークシートを選択
-        worksheet = self._get_worksheet_by_date(target_date)
+        # 期日から適切なワークシートを選択
+        worksheet = self._get_worksheet_by_due_date(due_date)
         
         todo_id = self._get_next_id(worksheet)
         created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -307,12 +271,13 @@ class SheetsAPI:
             except:
                 pass
         
-        target_date_str = target_date.strftime('%Y-%m-%d')
+        # 対象日は空文字列にする（互換性のため列は保持）
+        target_date_str = ''
         row = [todo_id, title, content, day_of_week, due_date, created_at, '', '未完了', target_date_str]
         worksheet.append_row(row)
         return todo_id
     
-    def update_todo(self, todo_id, title, content, due_date, target_date=None):
+    def update_todo(self, todo_id, title, content, due_date):
         """Todoを更新"""
         # まず、既存のTodoを検索してワークシートを特定
         found_worksheet = None
@@ -346,30 +311,12 @@ class SheetsAPI:
         # 既存の状態と完了日時を保持
         current_status = found_row[7] if len(found_row) > 7 else '未完了'
         completed_at = found_row[6] if len(found_row) > 6 else ''
-        current_target_date = found_row[8] if len(found_row) > 8 else ''
         
-        # 対象日が指定されない場合は既存の値を使用
-        if target_date:
-            if isinstance(target_date, str):
-                try:
-                    target_date = datetime.strptime(target_date, '%Y-%m-%d').date()
-                except:
-                    target_date = None
-        else:
-            # target_dateが指定されていない場合、既存の対象日を使用
-            if current_target_date:
-                try:
-                    target_date = datetime.strptime(current_target_date, '%Y-%m-%d').date()
-                except:
-                    target_date = datetime.now().date()
-            else:
-                target_date = datetime.now().date()
+        # 期日から適切なワークシートを選択
+        target_worksheet = self._get_worksheet_by_due_date(due_date)
         
-        target_date_str = target_date.strftime('%Y-%m-%d')
-        
-        # 対象日が変更された場合のみ、適切なワークシートに移動
-        new_target_date = target_date
-        target_worksheet = self._get_worksheet_by_date(new_target_date)
+        # 対象日は空文字列にする（互換性のため列は保持）
+        target_date_str = ''
         
         # ワークシートが変更された場合のみ移動
         if target_worksheet.id != found_worksheet.id:
@@ -397,34 +344,14 @@ class SheetsAPI:
                     return True
         return False
     
-    def carryover_todo(self, todo_id, target_date):
-        """Todoを次の日に持越す"""
+    def carryover_todo(self, todo_id, new_due_date):
+        """Todoを次の日に持越す（期日を更新）"""
         todo = self.get_todo_by_id(todo_id)
         if not todo:
             return False
         
-        # 適切なワークシートを選択
-        worksheet = self._get_worksheet_by_date(target_date)
-        
-        # 新しいTodoとして追加（状態は未完了にリセット）
-        new_todo_id = self._get_next_id(worksheet)
-        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        target_date_str = target_date.strftime('%Y-%m-%d') if hasattr(target_date, 'strftime') else str(target_date)
-        
-        # 期日から曜日を計算
-        day_of_week = ''
-        if todo.get('due_date'):
-            try:
-                due_date_obj = datetime.strptime(todo['due_date'], '%Y-%m-%d')
-                weekday_names = ['月', '火', '水', '木', '金', '土', '日']
-                day_of_week = weekday_names[due_date_obj.weekday()]
-            except:
-                pass
-        
-        row = [new_todo_id, todo['title'], todo['content'], day_of_week, todo.get('due_date', ''), 
-               created_at, '', '未完了', target_date_str]
-        worksheet.append_row(row)
-        return new_todo_id
+        # 期日を更新して新しいワークシートに移動する場合があるため、update_todoを使用
+        return self.update_todo(todo_id, todo['title'], todo['content'], new_due_date)
     
     def delete_todo(self, todo_id):
         """Todoを削除"""

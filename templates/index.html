@@ -30,11 +30,7 @@
             </div>
             <div class="header-right">
                 <button id="help-btn" class="btn btn-secondary desktop-only">操作方法</button>
-                {% if view_type == 'custom' %}
-                    <a href="{{ url_for('add_todo', view=view_type, target_date=current_date.strftime('%Y-%m-%d') if current_date else '') }}" class="btn btn-primary">新しいTodoを追加</a>
-                {% else %}
-                    <a href="{{ url_for('add_todo', view=view_type) }}" class="btn btn-primary">新しいTodoを追加</a>
-                {% endif %}
+                <a href="{{ url_for('add_todo', view=view_type) }}" class="btn btn-primary">新しいTodoを追加</a>
             </div>
         </header>
 
@@ -134,11 +130,7 @@
                                     {% endif %}
                                 {% endif %}
                             {% endif %}
-                            {% if view_type == 'custom' %}
-                                <a href="{{ url_for('edit_todo', todo_id=todo.id, target_date=current_date.strftime('%Y-%m-%d') if current_date else '') }}" class="btn btn-edit">編集</a>
-                            {% else %}
-                                <a href="{{ url_for('edit_todo', todo_id=todo.id) }}" class="btn btn-edit">編集</a>
-                            {% endif %}
+                            <a href="{{ url_for('edit_todo', todo_id=todo.id) }}" class="btn btn-edit">編集</a>
                             <form action="{{ url_for('delete_todo', todo_id=todo.id) }}" method="POST" class="action-form">
                                 <input type="hidden" name="view_type" value="{{ view_type }}">
                                 <input type="hidden" name="selected_date" value="{{ current_date.strftime('%Y-%m-%d') if current_date else '' }}">
@@ -197,9 +189,9 @@
                 <section>
                     <h3>📅 日付の選択方法</h3>
                     <ul>
-                        <li><strong>カレンダー</strong>: 左側のカレンダーから日付をクリックすると、その日のTodoが表示されます</li>
-                        <li><strong>タブ</strong>: 「昨日」「今日」「明日」のタブで素早く切り替えられます</li>
-                        <li><strong>過去・未来の確認</strong>: カレンダーで過去や未来の日付も選択できます</li>
+                        <li><strong>カレンダー</strong>: 左側のカレンダーから日付をクリックすると、その日付を期日とするTodoが表示されます</li>
+                        <li><strong>タブ</strong>: 「昨日」「今日」「明日」のタブで、それぞれの日付を期日とするTodoを素早く確認できます</li>
+                        <li><strong>過去・未来の確認</strong>: カレンダーで過去や未来の日付も選択でき、その日付を期日とするTodoが表示されます</li>
                     </ul>
                 </section>
 
@@ -207,11 +199,11 @@
                     <h3>➕ Todoの追加</h3>
                     <ol>
                         <li>「新しいTodoを追加」ボタンをクリック</li>
-                        <li>タイトル（必須）、内容、期日、対象日を入力</li>
+                        <li>タイトル（必須）、内容、期日を入力</li>
                         <li>「追加」ボタンをクリック</li>
                     </ol>
-                    <p><strong>期日</strong>: タスクの期限を設定します。Todoリストは<strong>期限順に自動的に並び替え</strong>られます（期限がないものは最後に表示されます）。</p>
-                    <p><strong>対象日</strong>: Todoを表示する日付を指定します。カレンダーで選択した日付が自動的に設定されます。</p>
+                    <p><strong>期日</strong>: タスクの期限を設定します。期日を設定すると、カレンダーでその日付を選択した際にTodoが表示されます。Todoリストは<strong>期限順に自動的に並び替え</strong>られます（期限がないものは最後に表示されます）。</p>
+                    <p><strong>カレンダーでの表示</strong>: カレンダーで日付を選択すると、その日付を期日とするTodoが表示されます。「今日」「昨日」「明日」タブも同じく、それぞれの日付を期日とするTodoを表示します。</p>
                 </section>
 
                 <section>
@@ -226,7 +218,7 @@
                     <h3>✅ 完了・持越し機能</h3>
                     <ul>
                         <li><strong>完了ボタン</strong>: 「今日」画面の未完了Todoに表示されます。押すと完了状態になり、緑色で表示されます</li>
-                        <li><strong>持越しボタン</strong>: 「今日」画面でのみ表示されます。次の日のTodoリストに移動します</li>
+                        <li><strong>持越しボタン</strong>: 「今日」画面でのみ表示されます。Todoの期日を明日に変更します。明日のTodoリストで確認できます</li>
                     </ul>
                 </section>
 
@@ -242,10 +234,11 @@
                 <section>
                     <h3>🗂️ スプレッドシートについて</h3>
                     <ul>
-                        <li><strong>1枚目「Todos」</strong>: 過去・今日・昨日・明日のTodoが保存されます</li>
-                        <li><strong>2枚目「Todos_Future」</strong>: 明日以降の未来のTodoが自動的に保存されます</li>
+                        <li><strong>1枚目「Todos」</strong>: 過去・今日・昨日・明日を期日とするTodoが保存されます</li>
+                        <li><strong>2枚目「Todos_Future」</strong>: 明日以降の未来の期日を持つTodoが自動的に保存されます</li>
                         <li>スプレッドシートで直接データを確認・編集することも可能です</li>
                         <li><strong>作成日時</strong>: 画面上には表示されませんが、スプレッドシート内の「作成日時」列でいつ追加されたかを確認できます（履歴管理や分析に利用可能）</li>
+                        <li><strong>対象日列</strong>: 互換性のため列は残っていますが、現在は使用されていません（期日のみで管理）</li>
                     </ul>
                 </section>
 
