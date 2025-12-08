@@ -851,6 +851,24 @@ main {
         flex-wrap: wrap;
     }
 
+    .todo-actions .action-form {
+        display: flex;
+        flex: 1;
+        min-width: 70px;
+    }
+
+    .todo-actions .action-form button {
+        width: 100%;
+    }
+
+    .todo-actions .btn-edit {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        min-width: 70px;
+    }
+
     .btn-edit,
     .btn-delete,
     .btn-complete,
